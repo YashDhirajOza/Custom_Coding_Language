@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Language Interpreter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            color: #c5c5c5;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #00ff88;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+            opacity: 0;
+            animation: fadeInGlow 2s ease-out forwards;
+        }
+
+        @keyframes fadeInGlow {
+            to {
+                opacity: 1;
+            }
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .terminal {
+            background: linear-gradient(145deg, #2d2d2d, #1e1e1e);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .terminal-dots {
+            display: flex;
+            gap: 8px;
+            margin-right: 15px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot.red { background: #ff5f56; }
+        .dot.yellow { background: #ffbd2e; }
+        .dot.green { background: #27ca3f; }
+
+        .terminal-title {
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        textarea {
+            width: 100%;
+            height: 300px;
+            margin-top: 15px;
+            padding: 15px;
+            border: none;
+            background: rgba(0, 0, 0, 0.5);
+            color: #c5c5c5;
+            font-size: 14px;
+            border-radius: 8px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+            line-height: 1.5;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #00ff88;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+
+        #run-button {
+            background: linear-gradient(45deg, #00ff88, #00cc6a);
+            color: #000;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+        }
+
+        #run-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 255, 136, 0.4);
+        }
+
+        #run-button:active {
+            transform: translateY(0);
+        }
+
+        #run-button.processing {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        #output {
+            width: 100%;
+            min-height: 200px;
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #00ff88;
+            font-size: 14px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            font-family: 'Courier New', monospace;
+            line-height: 1.5;
+        }
+
+        .process-visualization {
+            background: linear-gradient(145deg, #2d2d2d, #1e1e1e);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .process-step {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #666;
+            opacity: 0.5;
+            transition: all 0.5s ease;
+        }
+
+        .process-step.active {
+            opacity: 1;
+            border-left-color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+            transform: translateX(10px);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+        }
+
+        .process-step.completed {
+            opacity: 0.8;
+            border-left-color: #27ca3f;
+            background: rgba(39, 202, 63, 0.1);
+        }
+
+        .step-title {
+            color: #00ff88;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .step-content {
+            font-size: 12px;
+            color: #ccc;
+        }
+
+        .ast-visualization {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            min-height: 200px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .ast-node {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid #00ff88;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin: 5px;
+            display: inline-block;
+            font-size: 12px;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.3s ease;
+        }
+
+        .ast-node.appear {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .ast-level {
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .loading-animation {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 255, 136, 0.3);
+            border-radius: 50%;
+            border-top-color: #00ff88;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .example-code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 3px solid #00ff88;
+        }
+
+        .example-code h4 {
+            color: #00ff88;
+            margin-bottom: 10px;
+        }
+
+        .example-code pre {
+            color: #ccc;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .typing-effect {
+            overflow: hidden;
+            white-space: nowrap;
+            animation: typing 2s steps(40, end);
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        .execution-visualization {
+            grid-column: 1 / -1;
+            background: linear-gradient(145deg, #2d2d2d, #1e1e1e);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .variables-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .variable-card {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .variable-card.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .variable-name {
+            color: #00ff88;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .variable-value {
+            color: #fff;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Animated Language Interpreter</h1>
+        
+        <div class="example-code">
+            <h4>📝 Example Commands:</h4>
+            <pre>x = 5
+y = 10
+print x
+add x y
+mul x y
+div x y
+print "Hello World"</pre>
+        </div>
+
+        <div class="main-content">
+            <div class="terminal">
+                <div class="terminal-header">
+                    <div class="terminal-dots">
+                        <div class="dot red"></div>
+                        <div class="dot yellow"></div>
+                        <div class="dot green"></div>
+                    </div>
+                    <div class="terminal-title">Code Editor</div>
+                </div>
+                <textarea id="code-input" placeholder="Type your code here...
+x = 5
+y = 10
+print x
+add x y"></textarea>
+                <button id="run-button">🚀 Execute Code</button>
+                <div id="output"></div>
+            </div>
+
+            <div class="process-visualization">
+                <div class="terminal-header">
+                    <div class="terminal-dots">
+                        <div class="dot red"></div>
+                        <div class="dot yellow"></div>
+                        <div class="dot green"></div>
+                    </div>
+                    <div class="terminal-title">Process Visualization</div>
+                </div>
+                
+                <div id="process-steps">
+                    <div class="process-step" data-step="1">
+                        <div class="step-title">1. Lexical Analysis</div>
+                        <div class="step-content">Breaking code into tokens...</div>
+                    </div>
+                    <div class="process-step" data-step="2">
+                        <div class="step-title">2. Syntax Parsing</div>
+                        <div class="step-content">Building Abstract Syntax Tree...</div>
+                    </div>
+                    <div class="process-step" data-step="3">
+                        <div class="step-title">3. AST Transformation</div>
+                        <div class="step-content">Converting tree to executable form...</div>
+                    </div>
+                    <div class="process-step" data-step="4">
+                        <div class="step-title">4. Code Execution</div>
+                        <div class="step-content">Running transformed instructions...</div>
+                    </div>
+                </div>
+
+                <div class="ast-visualization" id="ast-display">
+                    <div style="color: #00ff88; font-weight: bold; margin-bottom: 15px;">
+                        Abstract Syntax Tree:
+                    </div>
+                    <div id="ast-content">Ready to parse...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="execution-visualization">
+            <div class="terminal-header">
+                <div class="terminal-dots">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                </div>
+                <div class="terminal-title">Execution Environment</div>
+            </div>
+            
+            <div class="variables-display" id="variables-display">
+                <div style="grid-column: 1 / -1; color: #00ff88; text-align: center; padding: 20px;">
+                    Variables will appear here during execution...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 0;
+        let variables = {};
+
+        function resetVisualization() {
+            currentStep = 0;
+            variables = {};
+            
+            // Reset process steps
+            document.querySelectorAll('.process-step').forEach(step => {
+                step.classList.remove('active', 'completed');
+            });
+            
+            // Clear AST display
+            document.getElementById('ast-content').innerHTML = 'Ready to parse...';
+            
+            // Clear variables display
+            document.getElementById('variables-display').innerHTML = 
+                '<div style="grid-column: 1 / -1; color: #00ff88; text-align: center; padding: 20px;">Variables will appear here during execution...</div>';
+        }
+
+        function animateStep(stepNumber, duration = 1000) {
+            return new Promise(resolve => {
+                const steps = document.querySelectorAll('.process-step');
+                
+                // Mark previous steps as completed
+                for (let i = 0; i < stepNumber - 1; i++) {
+                    steps[i].classList.remove('active');
+                    steps[i].classList.add('completed');
+                }
+                
+                // Activate current step
+                if (steps[stepNumber - 1]) {
+                    steps[stepNumber - 1].classList.add('active');
+                    
+                    // Add loading animation
+                    const stepContent = steps[stepNumber - 1].querySelector('.step-content');
+                    const originalContent = stepContent.innerHTML;
+                    stepContent.innerHTML = originalContent + '<span class="loading-animation"></span>';
+                    
+                    setTimeout(() => {
+                        stepContent.innerHTML = originalContent + ' ✓';
+                        steps[stepNumber - 1].classList.remove('active');
+                        steps[stepNumber - 1].classList.add('completed');
+                        resolve();
+                    }, duration);
+                } else {
+                    resolve();
+                }
+            });
+        }
+
+        function visualizeAST(code) {
+            const astContent = document.getElementById('ast-content');
+            astContent.innerHTML = '';
+            
+            const lines = code.split('\n').filter(line => line.trim());
+            
+            lines.forEach((line, index) => {
+                setTimeout(() => {
+                    const nodeDiv = document.createElement('div');
+                    nodeDiv.className = 'ast-level';
+                    
+                    let astNode = '';
+                    if (line.includes('=')) {
+                        const [varName, value] = line.split('=').map(s => s.trim());
+                        astNode = `<span class="ast-node">ASSIGN</span>
+                                  <span class="ast-node">VAR: ${varName}</span>
+                                  <span class="ast-node">VALUE: ${value}</span>`;
+                    } else if (line.startsWith('print')) {
+                        const content = line.replace('print', '').trim();
+                        astNode = `<span class="ast-node">PRINT</span>
+                                  <span class="ast-node">EXPR: ${content}</span>`;
+                    } else if (line.startsWith('add') || line.startsWith('mul') || line.startsWith('div') || line.startsWith('mod')) {
+                        const parts = line.split(' ');
+                        astNode = `<span class="ast-node">${parts[0].toUpperCase()}</span>
+                                  <span class="ast-node">LEFT: ${parts[1]}</span>
+                                  <span class="ast-node">RIGHT: ${parts[2]}</span>`;
+                    }
+                    
+                    nodeDiv.innerHTML = astNode;
+                    astContent.appendChild(nodeDiv);
+                    
+                    // Animate nodes appearing
+                    setTimeout(() => {
+                        nodeDiv.querySelectorAll('.ast-node').forEach((node, i) => {
+                            setTimeout(() => {
+                                node.classList.add('appear');
+                            }, i * 200);
+                        });
+                    }, 100);
+                }, index * 800);
+            });
+        }
+
+        function updateVariablesDisplay(newVars) {
+            const display = document.getElementById('variables-display');
+            
+            Object.keys(newVars).forEach(varName => {
+                if (!variables[varName]) {
+                    // New variable - create card
+                    const card = document.createElement('div');
+                    card.className = 'variable-card';
+                    card.innerHTML = `
+                        <div class="variable-name">${varName}</div>
+                        <div class="variable-value">${newVars[varName]}</div>
+                    `;
+                    
+                    display.appendChild(card);
+                    
+                    // Animate in
+                    setTimeout(() => {
+                        card.classList.add('show');
+                    }, 100);
+                } else if (variables[varName] !== newVars[varName]) {
+                    // Variable updated - animate change
+                    const existingCard = Array.from(display.children).find(card => 
+                        card.querySelector('.variable-name')?.textContent === varName
+                    );
+                    
+                    if (existingCard) {
+                        const valueDiv = existingCard.querySelector('.variable-value');
+                        valueDiv.style.transform = 'scale(1.2)';
+                        valueDiv.style.color = '#ff6b35';
+                        valueDiv.textContent = newVars[varName];
+                        
+                        setTimeout(() => {
+                            valueDiv.style.transform = 'scale(1)';
+                            valueDiv.style.color = '#fff';
+                        }, 300);
+                    }
+                }
+                
+                variables[varName] = newVars[varName];
+            });
+        }
+
+        async function executeCode() {
+            const code = document.getElementById('code-input').value;
+            const output = document.getElementById('output');
+            const button = document.getElementById('run-button');
+            
+            if (!code.trim()) {
+                output.textContent = 'Please enter some code to execute!';
+                return;
+            }
+            
+            resetVisualization();
+            
+            // Change button state
+            button.classList.add('processing');
+            button.textContent = '⚡ Processing...';
+            button.disabled = true;
+            
+            output.textContent = 'Starting execution...\n';
+            
+            try {
+                // Step 1: Lexical Analysis
+                await animateStep(1, 800);
+                output.textContent += '🔍 Lexical analysis complete\n';
+                
+                // Step 2: Syntax Parsing
+                await animateStep(2, 1000);
+                output.textContent += '🌳 AST generation started\n';
+                visualizeAST(code);
+                
+                // Step 3: AST Transformation
+                await animateStep(3, 800);
+                output.textContent += '🔄 Tree transformation complete\n';
+                
+                // Step 4: Code Execution
+                await animateStep(4, 500);
+                output.textContent += '🚀 Executing code...\n\n';
+                
+                // Actual code execution
+                const response = await fetch('http://127.0.0.1:5000/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    output.textContent += `❌ Error: ${data.error}`;
+                    output.style.color = '#ff6b6b';
+                } else {
+                    output.textContent += `✅ Output:\n${data.output}`;
+                    output.style.color = '#00ff88';
+                    
+                    // Simulate variable updates
+                    const lines = code.split('\n');
+                    const simulatedVars = {};
+                    lines.forEach(line => {
+                        if (line.includes('=')) {
+                            const [varName, value] = line.split('=').map(s => s.trim());
+                            if (!isNaN(value)) {
+                                simulatedVars[varName] = parseInt(value);
+                            }
+                        }
+                    });
+                    
+                    if (Object.keys(simulatedVars).length > 0) {
+                        setTimeout(() => updateVariablesDisplay(simulatedVars), 500);
+                    }
+                }
+                
+            } catch (err) {
+                output.textContent += `❌ Network Error: ${err.message}`;
+                output.style.color = '#ff6b6b';
+                console.error('Error:', err);
+            } finally {
+                // Reset button
+                button.classList.remove('processing');
+                button.textContent = '🚀 Execute Code';
+                button.disabled = false;
+            }
+        }
+
+        // Event listeners
+        document.getElementById('run-button').addEventListener('click', executeCode);
+
+        document.getElementById('code-input').addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                executeCode();
+            }
+        });
+
+        // Add some sample code on load
+        window.addEventListener('load', () => {
+            document.getElementById('code-input').value = `x = 5
+y = 10
+print x
+add x y
+print "Hello World"`;
+        });
+    </script>
+</body>
+</html>
