@@ -349,20 +349,20 @@ Handle exceptions gracefully with meaningful error messages
 Troubleshooting
 Common Issues
 1. Parser Creation Fails
-Problem: Reduce/Reduce collision errors Solution: Check grammar for ambiguous rules, ensure proper precedence
-
+Problem: Reduce/Reduce collision errors
+Solution: Check grammar for ambiguous rules, ensure proper precedence
 2. Variables Not Persisting
-Problem: Variables reset between requests Solution: Ensure global transformer instance is used (consider sessions for multi-user)
-
+Problem: Variables reset between requests
+Solution: Ensure global transformer instance is used (consider sessions for multi-user)
 3. CORS Errors in Frontend
-Problem: Browser blocks requests due to CORS policy Solution: Verify flask_cors is properly configured
-
+Problem: Browser blocks requests due to CORS policy
+Solution: Verify flask_cors is properly configured
 4. Import Errors
-Problem: Missing required packages Solution: Install all dependencies: pip install flask flask-cors lark
-
+Problem: Missing required packages
+Solution: Install all dependencies: pip install flask flask-cors lark
 5. Port Already in Use
-Problem: Cannot bind to port 5000 Solution: Change port using environment variable: export PORT=8080
-
+Problem: Cannot bind to port 5000
+Solution: Change port using environment variable: export PORT=8080
 Debug Mode
 Enable detailed error reporting:
 
